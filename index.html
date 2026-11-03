@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>북마클릿 · 설치 도우미</title>
+  <style>
+    :root{color-scheme:dark;font-family:system-ui,-apple-system,sans-serif}*{box-sizing:border-box}
+    body{margin:0;background:#111827;color:#f7f9fc;padding:20px;line-height:1.6}
+    main{max-width:660px;margin:auto}.box{background:#202c3e;border:1px solid #53627c;border-radius:16px;padding:18px;margin:16px 0}
+    h1{font-size:24px;margin-bottom:5px}h2{font-size:18px;margin-top:0}p,li{color:#c7d3e4}
+    input{width:100%;background:#101827;border:1px solid #788aa9;border-radius:9px;color:white;padding:12px;font-size:16px}
+    button{background:#4278e1;color:white;border:0;border-radius:10px;padding:12px 16px;font-weight:700;font-size:15px;margin-top:12px;cursor:pointer}
+    button:disabled{opacity:.5}pre{white-space:pre-wrap;word-break:break-all;background:#101827;color:#e4efff;padding:12px;border-radius:9px;font-size:12px;max-height:160px;overflow:auto}
+    small{color:#aebcd4}.success{color:#a5e8bd}.error{color:#ffc3a2}a{color:#9ac1ff}
+  </style>
+</head>
+<body><main>
+  <h1>🧰 북마클릿 설치 도우미</h1>
+  <p>웨일·Chrome에서 실행할 이미지/동영상 추출기를 하나의 짧은 북마크로 등록합니다.</p>
+  <div class="box">
+    <h2>① GitHub에 파일 업로드</h2>
+    <p>새 공개 저장소 이름을 <strong>bookmarklet</strong>로 만들고, 내려받은 ZIP의 <strong>압축을 해제한 파일들</strong>을 저장소 최상위에 업로드하세요. 기본 브랜치는 <strong>main</strong>이어야 합니다.</p>
+    <p><small>GitHub 저장소 실제 이름에는 한글을 쓸 수 없습니다. 저장소 설명을 ‘북마클릿’으로 적으면 됩니다.</small></p>
+    <a href="https://github.com/new" target="_blank" rel="noopener">GitHub 저장소 만들기</a>
+  </div>
+  <div class="box">
+    <h2>② 내 GitHub 사용자명 입력</h2>
+    <label for="username">GitHub 사용자명 (저장소 소유자)</label>
+    <input id="username" spellcheck="false" autocapitalize="off" placeholder="예: mygithub123">
+    <p><small>기존 저장소 이름이 다르면 아래 두 번째 입력칸에서 수정하세요.</small></p>
+    <label for="repo">저장소 이름</label>
+    <input id="repo" value="bookmarklet" spellcheck="false" autocapitalize="off">
+    <button id="copy" disabled>웨일용 짧은 북마클릿 복사</button>
+    <p id="status" aria-live="polite"></p>
+    <pre id="preview">이름을 입력하면 코드가 생성됩니다.</pre>
+    <a id="source" href="#" target="_blank" rel="noopener" hidden>launcher.js 주소 확인</a>
+  </div>
+  <div class="box">
+    <h2>③ 웨일 북마크에 등록</h2>
+    <ol>
+      <li>웨일에서 임의의 페이지를 북마크에 추가합니다.</li>
+      <li>북마크 편집에서 이름을 <strong>북마클릿</strong>, URL을 방금 복사한 코드로 변경합니다.</li>
+      <li>원하는 사이트를 연 후 주소창에서 ‘북마클릿’을 검색하고 <strong>별표가 붙은 북마크 항목</strong>을 탭하세요.</li>
+      <li>메뉴에서 <strong>이미지 추출기</strong> 또는 <strong>동영상 추출기</strong>를 선택합니다.</li>
+    </ol>
+    <p><small>일부 사이트는 콘텐츠 보안 정책(CSP)으로 외부 JS를 막습니다. 그런 페이지에서는 코드가 실행되지 않을 수 있습니다. GitHub CDN의 변경 반영에도 지연이 발생할 수 있습니다.</small></p>
+  </div>
+  <p><small>개인적으로 관리하는 GitHub 저장소에서만 실행하세요. 이 북마클릿은 외부 스크립트를 웹페이지의 권한으로 실행하므로, 저장소 접근 권한을 안전하게 관리해야 합니다.</small></p>
+</main>
+<script>
+  const u=document.getElementById('username'),r=document.getElementById('repo'),b=document.getElementById('copy'),p=document.getElementById('preview'),s=document.getElementById('status'),a=document.getElementById('source');
+  let snippet='';
+  function update(){
+    const owner=u.value.trim(),repo=r.value.trim();
+    const okay=/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/.test(owner)&&/^[A-Za-z0-9._-]{1,100}$/.test(repo);
+    b.disabled=!okay;s.textContent='';
+    if(!okay){snippet='';p.textContent='유효한 GitHub 사용자명과 저장소 이름을 입력하세요.';a.hidden=true;return}
+    const url=`https://cdn.jsdelivr.net/gh/${owner}/${repo}@main/launcher.js`;
+    snippet=`javascript:(()=>{let s=document.createElement('script');s.src='${url}';s.onerror=()=>alert('실행 실패: GitHub 파일 또는 CSP를 확인하세요.');document.documentElement.appendChild(s)})()`;
+    p.textContent=snippet;a.href=url;a.hidden=false;
+  }
+  u.addEventListener('input',update);r.addEventListener('input',update);
+  b.addEventListener('click',async()=>{
+    try{await navigator.clipboard.writeText(snippet);s.textContent='✅ 복사했습니다. 북마크 URL에 붙여넣으세요.';s.className='success'}
+    catch{const t=document.createElement('textarea');t.value=snippet;document.body.append(t);t.select();const ok=document.execCommand('copy');t.remove();s.textContent=ok?'✅ 복사했습니다.':'복사 권한이 제한되었습니다. 아래 코드를 길게 눌러 복사하세요.';s.className=ok?'success':'error'}
+  });
+  update();
+</script>
+</body></html>
